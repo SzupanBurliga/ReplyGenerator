@@ -1,0 +1,17 @@
+D:\Inne\ReplyGenerator\obj\Debug\net8.0\ReplyGenerator.csproj.AssemblyReference.cache
+D:\Inne\ReplyGenerator\obj\Debug\net8.0\ReplyGenerator.GeneratedMSBuildEditorConfig.editorconfig
+D:\Inne\ReplyGenerator\obj\Debug\net8.0\ReplyGenerator.AssemblyInfoInputs.cache
+D:\Inne\ReplyGenerator\obj\Debug\net8.0\ReplyGenerator.AssemblyInfo.cs
+D:\Inne\ReplyGenerator\obj\Debug\net8.0\ReplyGenerator.csproj.CoreCompileInputs.cache
+D:\Inne\ReplyGenerator\bin\Debug\net8.0\ReplyGenerator.exe
+D:\Inne\ReplyGenerator\bin\Debug\net8.0\ReplyGenerator.deps.json
+D:\Inne\ReplyGenerator\bin\Debug\net8.0\ReplyGenerator.runtimeconfig.json
+D:\Inne\ReplyGenerator\bin\Debug\net8.0\ReplyGenerator.dll
+D:\Inne\ReplyGenerator\bin\Debug\net8.0\ReplyGenerator.pdb
+D:\Inne\ReplyGenerator\bin\Debug\net8.0\HtmlAgilityPack.dll
+D:\Inne\ReplyGenerator\obj\Debug\net8.0\ReplyGen.41D50AF7.Up2Date
+D:\Inne\ReplyGenerator\obj\Debug\net8.0\ReplyGenerator.dll
+D:\Inne\ReplyGenerator\obj\Debug\net8.0\refint\ReplyGenerator.dll
+D:\Inne\ReplyGenerator\obj\Debug\net8.0\ReplyGenerator.pdb
+D:\Inne\ReplyGenerator\obj\Debug\net8.0\ReplyGenerator.genruntimeconfig.cache
+D:\Inne\ReplyGenerator\obj\Debug\net8.0\ref\ReplyGenerator.dll
