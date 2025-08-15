@@ -1,5 +1,6 @@
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.DevTools;
 using OpenQA.Selenium.Support.UI;
 using System;
 using System.Collections.Generic;
@@ -9,62 +10,114 @@ class Program
 {
     static void Main(string[] args)
     {
-        var url = "https://wadowice24.pl/kultura/wadowice-juz-zapowiedzialy-dozynki-gdzie-i-kiedy-w-tym-roku/";
-        
+        var todaysArticles = GetTodaysArticles("https://wadowice24.pl/najnowsze/");
+        foreach (var article in todaysArticles)
+        {
+            ScrapeComments(article);
+        }
+
+    }
+
+    public static void ScrapeComments(string url)
+    {
         // Konfiguracja Chrome
         var options = new ChromeOptions();
         options.AddArgument("--headless"); // Uruchom w tle bez okna
         options.AddArgument("--no-sandbox");
         options.AddArgument("--disable-dev-shm-usage");
-        
-        IWebDriver driver = new ChromeDriver(options);
-        
+        options.AddArgument("--disable-gpu");
+        options.AddArgument("--window-size=1920,1080");
+        options.AddArgument("--disable-extensions");
+        options.AddArgument("--disable-plugins");
+        options.AddArgument("--disable-images");
+        options.AddArgument("--disable-javascript-harmony-shipping");
+        options.AddArgument("--disable-logging");
+        options.AddArgument("--disable-login-animations");
+        options.AddArgument("--disable-notifications");
+        options.AddArgument("--no-default-browser-check");
+        options.AddArgument("--no-first-run");
+        options.AddArgument("--disable-default-apps");
+        options.AddArgument("--disable-popup-blocking");
+        options.AddArgument("--disable-translate");
+        options.AddArgument("--disable-background-timer-throttling");
+        options.AddArgument("--disable-renderer-backgrounding");
+        options.AddArgument("--disable-backgrounding-occluded-windows");
+        options.AddArgument("--disable-ipc-flooding-protection");
+        options.AddArgument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+        options.AddArgument("--log-level=3");
+        options.AddArgument("--silent");
+
+        var service = ChromeDriverService.CreateDefaultService();
+        service.HideCommandPromptWindow = true;
+        service.SuppressInitialDiagnosticInformation = true;
+
+        IWebDriver driver = new ChromeDriver(service, options);
+
         try
         {
-            Console.WriteLine("Ładowanie strony...");
             driver.Navigate().GoToUrl(url);
-            
-            // Czekamy na załadowanie Disqus
-            Console.WriteLine("Czekam na załadowanie komentarzy Disqus...");
-            Thread.Sleep(5000); // Czekamy 5 sekund na załadowanie JavaScript
-            
-            // Próbujemy znaleźć iframe Disqus
+            Console.WriteLine("Ladowanie stronki");
+            Thread.Sleep(5000);
+
             try
             {
+                // szukamy kontenerow z komentarzami
                 var disqusFrame = driver.FindElement(By.Id("disqus_thread"));
-                Console.WriteLine("Znaleziono kontener Disqus!");
-                
-                // Szukamy iframe wewnątrz kontenera Disqus
                 var iframes = driver.FindElements(By.TagName("iframe"));
-                Console.WriteLine($"Znaleziono {iframes.Count} iframe(s)");
-                
+
+
                 foreach (var iframe in iframes)
                 {
                     try
                     {
                         driver.SwitchTo().Frame(iframe);
-                        
-                        // Używamy selektorów z Twojego przykładu
+
+
                         var comments = driver.FindElements(By.CssSelector("div[data-role='post-content']"));
-                        
+
                         if (comments.Count > 0)
                         {
                             Console.WriteLine($"Znaleziono {comments.Count} komentarzy!");
-                            
+
                             foreach (var comment in comments)
                             {
                                 try
                                 {
-                                    // Wyciągamy autora
                                     var authorElement = comment.FindElement(By.CssSelector("span.author"));
                                     string author = authorElement.Text.Trim();
-
-                                    // Wyciągamy treść komentarza
                                     var messageElement = comment.FindElement(By.CssSelector("div.post-message"));
                                     string message = messageElement.Text.Trim();
 
+                                    string timeAgo = "Brak czasu";
+                                    try
+                                    {
+                                        var timeElement = comment.FindElement(By.CssSelector("a.time-ago"));
+                                        timeAgo = timeElement.Text.Trim();
+                                    }
+                                    catch
+                                    {
+                                        try
+                                        {
+                                            var timeElement = comment.FindElement(By.CssSelector(".post-meta a[data-role='relative-time']"));
+                                            timeAgo = timeElement.Text.Trim();
+                                        }
+                                        catch
+                                        {
+                                            try
+                                            {
+                                                var timeElement = comment.FindElement(By.CssSelector("[data-role='relative-time']"));
+                                                timeAgo = timeElement.Text.Trim();
+                                            }
+                                            catch
+                                            {
+                                                timeAgo = "Brak czasu";
+                                            }
+                                        }
+                                    }
+
                                     // Wyświetlamy wynik
                                     Console.WriteLine($"Autor: {author}");
+                                    Console.WriteLine($"Czas: {timeAgo}");
                                     Console.WriteLine($"Komentarz: {message}");
                                     Console.WriteLine(new string('-', 50));
                                 }
@@ -73,14 +126,14 @@ class Program
                                     Console.WriteLine($"Błąd przy przetwarzaniu komentarza: {ex.Message}");
                                 }
                             }
-                            break; // Znaleźliśmy komentarze, kończymy
+                            break;
                         }
-                        
-                        driver.SwitchTo().DefaultContent(); // Wracamy do głównej strony
+
+                        driver.SwitchTo().DefaultContent();
                     }
                     catch (Exception ex)
                     {
-                        driver.SwitchTo().DefaultContent(); // Upewniamy się, że wracamy do głównej strony
+                        driver.SwitchTo().DefaultContent();
                         Console.WriteLine($"Nie udało się przełączyć na iframe: {ex.Message}");
                     }
                 }
@@ -89,14 +142,14 @@ class Program
             {
                 Console.WriteLine($"Nie znaleziono kontenera Disqus: {ex.Message}");
                 Console.WriteLine("Próbuję alternatywne metody...");
-                
+
                 // Alternatywna metoda - szukamy bezpośrednio komentarzy
                 var comments = driver.FindElements(By.CssSelector("div[data-role='post-content']"));
-                
+
                 if (comments.Count > 0)
                 {
                     Console.WriteLine($"Znaleziono {comments.Count} komentarzy (metoda alternatywna)!");
-                    
+
                     foreach (var comment in comments)
                     {
                         try
@@ -107,7 +160,36 @@ class Program
                             var messageElement = comment.FindElement(By.CssSelector("div.post-message"));
                             string message = messageElement.Text.Trim();
 
+                            // Wyciągamy czas dodania komentarza
+                            string timeAgo = "Nieznany czas";
+                            try
+                            {
+                                var timeElement = comment.FindElement(By.CssSelector("a.time-ago"));
+                                timeAgo = timeElement.Text.Trim();
+                            }
+                            catch
+                            {
+                                try
+                                {
+                                    var timeElement = comment.FindElement(By.CssSelector(".post-meta a[data-role='relative-time']"));
+                                    timeAgo = timeElement.Text.Trim();
+                                }
+                                catch
+                                {
+                                    try
+                                    {
+                                        var timeElement = comment.FindElement(By.CssSelector("[data-role='relative-time']"));
+                                        timeAgo = timeElement.Text.Trim();
+                                    }
+                                    catch
+                                    {
+                                        timeAgo = "Nieznany czas";
+                                    }
+                                }
+                            }
+
                             Console.WriteLine($"Autor: {author}");
+                            Console.WriteLine($"Czas: {timeAgo}");
                             Console.WriteLine($"Komentarz: {message}");
                             Console.WriteLine(new string('-', 50));
                         }
@@ -120,13 +202,6 @@ class Program
                 else
                 {
                     Console.WriteLine("Nie znaleziono komentarzy.");
-                    
-                    // Debug - wyświetlamy dostępne elementy
-                    var allDivs = driver.FindElements(By.TagName("div"));
-                    Console.WriteLine($"Znaleziono {allDivs.Count} elementów div na stronie");
-                    
-                    var disqusElements = driver.FindElements(By.CssSelector("*[id*='disqus'], *[class*='disqus']"));
-                    Console.WriteLine($"Znaleziono {disqusElements.Count} elementów związanych z Disqus");
                 }
             }
         }
@@ -134,11 +209,85 @@ class Program
         {
             Console.WriteLine($"Ogólny błąd: {ex.Message}");
         }
-        finally
+    }
+
+
+    public static List<string> GetTodaysArticles(string url)
+    {
+        var articles = new List<string>();
+
+        var options = new ChromeOptions();
+        options.AddArgument("--headless");
+        options.AddArgument("--no-sandbox");
+        options.AddArgument("--disable-dev-shm-usage");
+        options.AddArgument("--disable-gpu");
+        options.AddArgument("--window-size=1920,1080");
+        options.AddArgument("--disable-extensions");
+        options.AddArgument("--disable-plugins");
+        options.AddArgument("--disable-images");
+        options.AddArgument("--disable-javascript-harmony-shipping");
+        options.AddArgument("--disable-logging");
+        options.AddArgument("--disable-login-animations");
+        options.AddArgument("--disable-notifications");
+        options.AddArgument("--no-default-browser-check");
+        options.AddArgument("--no-first-run");
+        options.AddArgument("--disable-default-apps");
+        options.AddArgument("--disable-popup-blocking");
+        options.AddArgument("--disable-translate");
+        options.AddArgument("--disable-background-timer-throttling");
+        options.AddArgument("--disable-renderer-backgrounding");
+        options.AddArgument("--disable-backgrounding-occluded-windows");
+        options.AddArgument("--disable-ipc-flooding-protection");
+        options.AddArgument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+        options.AddArgument("--log-level=3");
+        options.AddArgument("--silent");
+
+        var service = ChromeDriverService.CreateDefaultService();
+        service.HideCommandPromptWindow = true;
+        service.SuppressInitialDiagnosticInformation = true;
+
+        try
         {
-            driver.Quit();
-            Console.WriteLine("\nNaciśnij Enter aby zakończyć...");
-            Console.ReadLine();
+            using (var driver = new ChromeDriver(service, options))
+            {
+                driver.Navigate().GoToUrl(url);
+                driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+                Thread.Sleep(3000);
+                var articleElements = driver.FindElements(By.CssSelector("article.entry-card"));
+
+                foreach (var article in articleElements)
+                {
+                    try
+                    {
+                        // sprawdzamy date
+                        var timeElement = article.FindElement(By.CssSelector("time.ct-meta-element-date"));
+                        var dateTimeAttr = timeElement.GetAttribute("datetime");
+                        
+                        if (!string.IsNullOrEmpty(dateTimeAttr) && DateTime.TryParse(dateTimeAttr, out var publishDate))
+                        {
+                            if (publishDate.Date == new DateTime(2025, 8, 14))
+                            {
+                                var titleElement = article.FindElement(By.CssSelector("h3.entry-title a"));
+                                var link = titleElement.GetAttribute("href");
+
+                                articles.Add(link);
+                            }
+                        }
+                    }
+                    catch (Exception articleEx)
+                    {
+                        Console.WriteLine($"Błąd przy przetwarzaniu artykułu: {articleEx.Message}");
+                    }
+                }
+
+                Console.WriteLine($"Znaleziono {articles.Count} artykułów z dzisiejszą datą");
+            }
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Błąd podczas pobierania artykułów: {ex.Message}");
+        }
+
+        return articles;
     }
 }
